@@ -10,6 +10,6 @@ spec:
     termination: edge
   to:
     kind: Service
-    name: andreas-kavountzis-live-pfs
+    name: andreas-kavountzis-pipeline-from-scratch
     weight: 100
   wildcardPolicy: None
