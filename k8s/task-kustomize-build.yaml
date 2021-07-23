@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kustomize-build
+spec:
+  params:
+    - name: app-name
+      description: the name of the app
+    - name: app-namespace
+      description: namespace that deployment will be tested in
+    - name: image-with-tag
+      description: contains the full image take in image:tag format
+  workspaces:
+    - name: source
+      description: contains the cloned git repo
+  steps:
+    - name: kustomize-build
+      image: quay.io/upslopeio/kustomize:latest
+      script: |
+        #!/bin/sh
+
+        echo "image-with-tag: $(params.image-with-tag)"
+
+        cd source/k8s
+        kustomize edit set image "*=$(params.image-with-tag)"
+        kustomize edit set label "app:$(params.app-namespace)"
+        kustomize edit set label "app.kubernetes.io/instance:$(params.app-namespace)"
+        kustomize edit set label "app.kubernetes.io/name:$(params.app-namespace)-$(params.app-name)"
+
+        kustomize build > manifests.yaml
+
+        if [ -f manifests.yaml ]; then
+          echo "manifests.yaml successfully generated"
+          echo "contents of manifests is:"
+          cat manifests.yaml
+        else
+          echo "ERROR: manifests.yaml not generated"
+          exit 1
+        fi
