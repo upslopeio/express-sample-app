@@ -4,7 +4,7 @@ resources:
   - ./k8sConfig/deployment.yaml
   - ./k8sConfig/service.yaml
   - ./k8sConfig/route.yaml
-  - ./k8sConfig/role-deployer.yaml
+  - ./k8sConfig/build-bot-permissions.yaml
 commonLabels:
   app: fabianschwab-express-sample-app
   app.kubernetes.io/instance: fabianschwab-express-sample-app-instance
