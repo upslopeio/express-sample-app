@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   annotations:
     app.openshift.io/vcs-ref: f7580aa1eb6f7176705176e201ecff4de93edafb
-    app.openshift.io/vcs-uri: https://github.com/upslopeio/express-sample-app
+    app.openshift.io/vcs-uri: https://github.com/fabianschwab/express-sample-app
   labels:
     app: express-sample-app
     app.kubernetes.io/instance: express-sample-app-instance

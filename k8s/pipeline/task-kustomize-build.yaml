@@ -21,11 +21,12 @@ spec:
 
         echo "image-with-tag: $(params.image-with-tag)"
 
-        cd source/k8s
+        cd source/k8s/k8sConfig/
         kustomize edit set image "*=$(params.image-with-tag)"
         kustomize edit set label "app:$(params.app-namespace)"
         kustomize edit set label "app.kubernetes.io/instance:$(params.app-namespace)"
         kustomize edit set label "app.kubernetes.io/name:$(params.app-namespace)-$(params.app-name)"
+        cd ../
 
         kustomize build > manifests.yaml
 

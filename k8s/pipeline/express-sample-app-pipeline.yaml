@@ -1,0 +1,79 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: express-sample-app-pipeline
+spec:
+  params:
+    - name: image-repo
+      type: string
+      description: Docker image name
+    - name: app-name
+      type: string
+      description: the name of the app
+  workspaces:
+  - name: pipeline-shared-data
+  tasks:
+  - name: clone-repository
+    taskRef:
+      kind: ClusterTask
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: pipeline-shared-data
+    params:
+    - name: url
+      value: https://github.com/fabianschwab/express-sample-app.git
+  - name: run-tests
+    taskRef:
+      name: npm
+    workspaces:
+    - name: source
+      workspace: pipeline-shared-data
+    params:
+    - name: ARGS
+      value:
+      - install-ci-test
+    runAfter:
+    - clone-repository
+  - name: build-image
+    taskRef:
+      kind: ClusterTask
+      name: buildah
+    runAfter:
+      - run-tests
+    params:
+      - name: IMAGE
+        value: "quay.io/fabianschwab/express-sample-app:$(tasks.clone-repository.results.commit)"
+    workspaces:
+      - name: source
+        workspace: pipeline-shared-data
+  - name: kustomize-build
+    runAfter:
+      - build-image
+    params:
+      - name: app-name
+        value: "$(params.app-name)"
+      - name: app-namespace
+        value: "$(context.pipelineRun.namespace)"
+      - name: image-with-tag
+        value: "$(params.image-repo):$(tasks.clone-repository.results.commit)"
+    taskRef:
+      kind: Task
+      name: kustomize-build
+    workspaces:
+      - name: source
+        workspace: pipeline-shared-data
+  - name: test-deploy
+    taskRef:
+      kind: Task
+      name: test-deploy
+    params:
+      - name: app-name
+        value: "$(params.app-name)"
+      - name: app-namespace
+        value: "$(context.pipelineRun.namespace)"
+    workspaces:
+      - name: source
+        workspace: pipeline-shared-data
+    runAfter:
+      - kustomize-build

@@ -1,3 +1,55 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: fabianschwab-express-sample-app
+    app.kubernetes.io/instance: fabianschwab-express-sample-app-instance
+    app.kubernetes.io/name: fabianschwab-express-sample-app
+  name: deployer
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - create
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - get
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - patch
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app: fabianschwab-express-sample-app
+    app.kubernetes.io/instance: fabianschwab-express-sample-app-instance
+    app.kubernetes.io/name: fabianschwab-express-sample-app
+  name: deployer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: deployer
+subjects:
+- kind: ServiceAccount
+  name: build-bot
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -54,7 +106,7 @@ spec:
         - name: PROTOCOLS
         - name: LOG_LEVEL
           value: debug
-        image: quay.io/fabianschwab/express-sample-app:d90c742ee626048c4d1e2032eb836255e4036561
+        image: quay.io/fabianschwab/express-sample-app
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
