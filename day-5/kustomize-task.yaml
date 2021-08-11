@@ -1,0 +1,54 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kustomize
+spec:
+  params:
+    - name: app-name
+      description: the name of the app
+    - name: app-namespace
+      description: namespace of the deployment
+    - name: image-repo
+      description: contains the full image repository (without :tag)
+    - name: source-repo
+      description: Source git repository
+    - name: commit
+      description: The precise commit SHA used for this task
+  workspaces:
+    - name: source
+      description: contains the cloned git repo
+  steps:
+    - name: kustomize-build
+      image: quay.io/upslopeio/kustomize:latest
+      script: |
+        #!/bin/sh
+
+        cd source/k8s
+
+        if [ -f kustomization.yaml ] || [ -f kustomization.yml ] || [ -f Kustomization ]; then
+          echo "Kustomization file found."
+        else
+          echo "Error: unable to find one of 'kustomization.yaml', 'kustomization.yml' or 'Kustomization' in directory:"
+          pwd
+          exit 1
+        fi
+
+        kustomize edit set image "*=$(params.image-repo):$(params.commit)"
+        kustomize edit set label "app.kubernetes.io/instance:$(params.app-namespace)"
+        kustomize edit set label "app.kubernetes.io/name:$(params.app-namespace)-$(params.app-name)"
+        kustomize edit set label "app.openshift.io/runtime:js"
+        kustomize edit set label "app:$(params.app-namespace)"
+
+        kustomize edit add annotation "app.openshift.io/vcs-uri:$(params.source-repo)"
+        kustomize edit add annotation "app.openshift.io/vcs-ref:$(params.commit)"
+
+        kustomize build > manifests.yaml
+
+        if [ -f manifests.yaml ]; then
+          echo "manifests.yaml successfully generated"
+          echo "contents of manifests is:"
+          cat manifests.yaml
+        else
+          echo "ERROR: manifests.yaml not generated"
+          exit 1
+        fi
