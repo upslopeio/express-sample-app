@@ -96,3 +96,17 @@ spec:
           workspace: pipeline-shared-data
       runAfter:
         - kustomize
+    - name: gitops
+      taskRef:
+        kind: Task
+        name: commit-manifest
+      params:
+        - name: app-name
+          value: "$(params.app-name)"
+        - name: sha
+          value: "$(tasks.clone-repository.results.commit)"
+      workspaces:
+        - name: source
+          workspace: pipeline-shared-data
+      runAfter:
+        - try-to-deploy
